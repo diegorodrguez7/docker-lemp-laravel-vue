@@ -18,7 +18,7 @@ All requisites should be available for your distribution. The most important are
 * [Git](https://git-scm.com/downloads)
 * [Docker](https://docs.docker.com/engine/installation/)
 * [Docker Compose](https://docs.docker.com/compose/install/)
-* [Visutal Studio Code](https://https://code.visualstudio.com)<font size="2"> (You can use whatever IDE allows you to work inside containers)</font>
+* [Visual Studio Code](https://https://code.visualstudio.com)<font size="2"> (You can use whatever IDE allows you to work inside containers)</font>
 
 Check if `docker-compose` is already installed by entering the following command: 
 
@@ -112,17 +112,17 @@ Secondly you should be editing the docker compose environment file to setup the 
 :information_source: **See [configuration](#4-configuration)** for more details.
 
 ### 3.3. Generate new Laravel and Vue projects
-To generate a new Laravel project uses the command:
+- To generate a new Laravel project uses this command from the project root:
 ```sh
-./.generate_first_time_backend.sh
+sh -c bash_tools/scripts/generate_first_time_backend.sh
 ```
  
-To generate the Vue+Vite project uses the command:
+- To generate a new Vue+Vite project uses this command from the project root:
 ```sh
-./.generate_first_time_frontend.sh
+sh -c bash_tools/scripts/generate_first_time_frontend.sh
 ``` 
 
-:information_source: **See [frontend & backend projects](#6-frontend--backend-projects)** for more details.
+:information_source: **See [frontend & backend projects](#6-frontend--backend-projects)** for more details if you need to includes existing projects.
 
 ### 3.4. Deploy containers for development
 - **Compose up** command:
@@ -281,7 +281,6 @@ CONFIG_PHP_OPCACHE_VALIDATE_TIMESTAMPS="1"
 
 LARAVEL_APP_NAME=${PROJECT_NAME}_API
 LARAVEL_APP_ENV=local
-LARAVEL_APP_KEY=base64:10ygXpzBj4lgDpee1JGej18sqZNv5A2j7hB79sD2t8o # ✏️ FILL APP KEY FROM LARAVEL
 LARAVEL_APP_DEBUG=true
 LARAVEL_APP_URL=http://${CONFIG_NGINX_HOST}
 
@@ -345,7 +344,9 @@ LARAVEL_OCTANE_SERVER=swoole
 </details>
  ‎
 
-In this block you can configure the environment variables needed by the backend container and used by Laravel. The latter will ignore the original ```.env``` file located in the Laravel source code folder. Besides this, we expose variables to config the php ```OPcache extension```.
+In this block you can configure the environment variables needed by the backend container and used by Laravel. The latter will ignore the values in the original ```.env``` file, located in the Laravel source code folder, if we setup the same variable name in our file. Besides this, we expose variables to config the php ```OPcache extension```.
+
+> **Note:** The APP key that Laravel generates with artisan will not be configured in this file and Laravel will read it from its own .env. We do this to save us configuration steps, when Laravel already fills in this data for us.
 
 - [More information about Laravel environment configuration](https://laravel.com/docs/9.x/configuration)
 - [More information about OPcache environment configuration](https://www.php.net/manual/es/opcache.configuration.php)
@@ -398,18 +399,18 @@ The images used in frontend and backend containers are used to work with Laravel
 Before composing up the containers it is important to have ready the folders with both projects, since frontend and backend containers will be mounting this folders as volumes.
 
 ### 6.1 First time project generation
-You can generate new Laravel and Vue projects using the bash scripts ```.generate_first_time_backend.sh``` and ```.generate_first_time_frontend.sh```. They are using docker images to generate the full projects.
+You can generate new Laravel and Vue projects using the bash scripts ```.bash_tools/scripts/generate_first_time_backend.sh``` and ```.bash_tools/scripts/generate_first_time_frontend.sh```. They are using docker images to generate the full projects.
 
-- To generate a **new Laravel project** uses the command:
+- To generate a **new Laravel project** uses this command from the project root:
 
 ```sh
-./.generate_first_time_backend.sh
+sh -c bash_tools/scripts/generate_first_time_backend.sh
 ```
  
-- To generate a **new Vue+Vite project** uses the command:
+- To generate a **new Vue+Vite project** uses this command from the project root:
 
 ```sh
-./.generate_first_time_frontend.sh
+sh -c bash_tools/scripts/generate_first_time_frontend.sh
 ``` 
 
 It is important to take into account that vite config file in ```.devcontainer/config/vite.config.template.js``` is mounted in the frontend container using volumes. When frontend container starts, it copy the file to ```projectName_frontend/vite.config.js``` using ```envsubst``` to converts environment variables to the data they are pointing. So if you are going to change it you must restart the container for them to take effect.
@@ -419,12 +420,32 @@ How to work with Laravel or Vue is out of scope of this document.
 ### 6.2 Including existing projects
 You can add your projects creating git submodules that points to them. Remember that folders name must be ```${PROJECT_NAME}_backend``` and ```${PROJECT_NAME}_frontend```. As said before, ```PROJECT_NAME``` can be set in ```./devcontainer/.env```.
 
-Write this commands to create git submodules from the project root
+Write this commands to create git submodules from the project root:
 
 ```sh
 git submodule add https://github.com/user/frontAPP ProjectName_frontend
 git submodule add https://github.com/user/backAPI ProjectName_backend
 ```
+
+As the repositories where these projects are located do not include the dependency files they need (or at least they shouldn't), we have prepared some scripts that will help you with this task.
+
+- Run this command from the root of the project to install the **backend** dependencies:
+
+```sh
+sh -c bash_tools/scripts/install_dependencies_backend.sh
+```
+
+- Run this command from the root of the project to install the **frontend** dependencies:
+
+```sh
+sh -c bash_tools/scripts/install_dependencies_frontend.sh
+```
+
+In the case of the backend it will also copy the Laravel configuration file ```.env.example``` to ```.env``` and then generate an API key for the application.
+
+> **Note:** Do not run these scripts if your projects were previously generated with ```generate_first_first_time_backend.sh``` or ```generate_first_time_frontend.sh``` as these are generated with all the dependencies they need.
+
+> **Monorepositories:** I think it is possible to work in a [monorepo](https://www.atlassian.com/git/tutorials/monorepos) using this setup, instead of using git submodules, since each project is isolated in a folder and with its own docker-based environment tools. So, to do this you just put in the project the source code in the frontend and backend folders and let them coexist in a single git repository. It is up to you to decide how to manage the workflow with git and your projects.
 
 ## 7. Contributing to this repository
 Feel free to contribute to this project with any changes. Make a fork of the repository and clone it on your computer, make changes as you see fit and create a [pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request).
